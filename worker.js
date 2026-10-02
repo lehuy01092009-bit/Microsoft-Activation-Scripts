@@ -9,8 +9,13 @@
  *   GET /separate    -> danh sách file version riêng lẻ
  */
 
-const REPO_RAW = 'https://raw.githubusercontent.com/lehuy01092009-bit/Microsoft-Activation-Scripts/master';
-const REPO_ZIP = 'https://github.com/lehuy01092009-bit/Microsoft-Activation-Scripts/archive/refs/heads/master.zip';
+// Nguon file: jsDelivr mirror truoc (cache ngan, purge duoc), raw github la fallback.
+// raw.githubusercontent.com co CDN cache ~5 phut khien ban moi push chua hien ngay.
+const SOURCES = [
+  'https://cdn.jsdelivr.net/gh/lehuy01092009-bit/Microsoft-Activation-Scripts@master',
+  'https://raw.githubusercontent.com/lehuy01092009-bit/Microsoft-Activation-Scripts/master',
+];
+const REPO_ZIP = 'https://codeload.github.com/lehuy01092009-bit/Microsoft-Activation-Scripts/zip/refs/heads/master';
 const VERSION  = '3.12-htchuai';
 
 // ---- HTML landing ----------------------------------------------------------
@@ -96,14 +101,21 @@ function txt(body, status = 200) {
 }
 
 async function fromRepo(path, fallbackMsg) {
-  const url = `${REPO_RAW}/${path}`;
-  try {
-    const r = await fetch(url, { cf: { cacheTtl: 300 } });
-    if (!r.ok) return txt(`${fallbackMsg}\n\n(upstream ${r.status}: ${url})`, 502);
-    return txt(await r.text());
-  } catch (e) {
-    return txt(`${fallbackMsg}\n\n(${e.message})`, 502);
+  let lastErr = '';
+  for (const base of SOURCES) {
+    const url = `${base}/${path}`;
+    try {
+      const r = await fetch(url, { cf: { cacheTtl: 60 } });
+      if (!r.ok) {
+        lastErr = `upstream ${r.status} (${new URL(base).host})`;
+        continue;
+      }
+      return txt(await r.text());
+    } catch (e) {
+      lastErr = e.message;
+    }
   }
+  return txt(`${fallbackMsg}\n\n(${lastErr})`, 502);
 }
 
 // ---- router ----------------------------------------------------------------
