@@ -1,0 +1,13 @@
+# WorkBuddy local data
+.workbuddy-ai/
+
+# Cloudflare / wrangler
+.wrangler/
+node_modules/
+.dev.vars
+
+# OS / editor
+Thumbs.db
+desktop.ini
+*.log
+_tmp.log

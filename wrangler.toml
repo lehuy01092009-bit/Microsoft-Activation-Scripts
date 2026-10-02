@@ -1,0 +1,14 @@
+name = "mas-htchuai"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Domain sẽ phục vụ worker này.
+# Sau khi deploy, chạy: npx wrangler deploy
+# rồi vào Cloudflare dashboard -> Workers -> mas-htchuai -> Settings -> Domains & Routes
+# -> Add Custom Domain -> htchuai.dpdns.org
+routes = [
+  { pattern = "htchuai.dpdns.org/*", custom_domain = true }
+]
+
+[observability]
+enabled = true
