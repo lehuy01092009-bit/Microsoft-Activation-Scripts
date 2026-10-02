@@ -1,0 +1,11 @@
+# MAS .cmd/.bat files MUST keep CRLF line endings.
+# The script aborts at startup if it detects LF-only line endings.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.txt text eol=crlf
+*.html text eol=crlf
+*.md  text eol=lf
+*.js  text eol=lf
+*.toml text eol=lf
+.gitignore text eol=lf
