@@ -351,31 +351,9 @@ exit /b
 
 ::========================================================================================================================================
 
-::  Check for updates
-
-set -=
-set old=
-set pingp=
-set upver=%masver:.=%
-rem  upver is unused in the htchuai fork (update check disabled)
-
-::  Update check is disabled in the htchuai fork.
-::  Re-enable it only if you host your own updatecheck endpoint.
-
-if not %_unattended%==1 (
-echo ________________________________________________
-%eline%
-echo You are running the htchuai fork of MAS [%masver%]
-echo ________________________________________________
-echo:
-echo [1] Visit Project Page
-echo [0] Continue Anyway
-echo:
-call :dk_color %_Green% "Choose a menu option using your keyboard [1,0] :"
-choice /C:10 /N
-if !errorlevel!==2 rem
-if !errorlevel!==1 (start %selfgit% & start %github% & start %mas% & exit /b)
-)
+::  Update check disabled in the htchuai fork.
+::  Upstream pinged activated.win / massgrave.dev, which would report a
+::  false "outdated" warning on a fork. Removed entirely.
 
 ::========================================================================================================================================
 
