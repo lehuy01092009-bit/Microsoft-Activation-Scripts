@@ -14,7 +14,14 @@
 | Tạo `deploy.ps1` | ✅ Xong |
 | **Upload Worker lên Cloudflare** | ✅ **XONG** — `mas-htchuai` |
 | **Gắn domain htchuai.dpdns.org** | ✅ **XONG** — HTTP 200, hết lỗi 530 |
-| **Push lên GitHub** | ⏳ Còn lại — cần bạn |
+| **Push lên GitHub** | ✅ **XONG** — `lehuy01092009-bit/Microsoft-Activation-Scripts` |
+| **Test end-to-end** | ✅ **XONG** — cả 5 route đều đúng |
+
+## Lệnh đã chạy được
+
+```powershell
+irm https://htchuai.dpdns.org/get | iex
+```
 
 ### Trạng thái đã deploy
 
@@ -22,14 +29,46 @@
 Worker:   mas-htchuai
 Route:    htchuai.dpdns.org/*  ->  mas-htchuai
 workers.dev: mas-htchuai.lehuy01092009.workers.dev
+Repo:     github.com/lehuy01092009-bit/Microsoft-Activation-Scripts (public)
 
-GET /      -> HTTP 200  (landing page)
-GET /nope  -> HTTP 404  (đúng)
-GET /get   -> 502 (upstream 404)  <- CHỜ REPO GITHUB
+GET /      -> HTTP 200            landing page
+GET /get   -> HTTP 200  4121 B    loader (PowerShell)
+GET /aio   -> HTTP 200  742984 B  MAS_AIO.cmd
+GET /zip   -> HTTP 302            -> codeload.github.com/.../master.zip
+GET /nope  -> HTTP 404
 ```
 
-`/get` trả 502 vì worker fetch `get.ps1` từ GitHub — repo chưa tồn tại.
-Push repo xong là endpoint tự chạy, **không cần deploy lại worker**.
+Verify ZIP: 24 file, `MAS_AIO.cmd` giữ **CRLF=19223, bareLF=0** → chạy được sau khi tải.
+
+### ⚠️ Lưu ý về username
+
+Username GitHub thật là **`lehuy01092009-bit`** — KHÔNG phải `htchuai` (account đó
+không tồn tại). Danh xưng `htchuai` chỉ dùng làm tên brand/domain, không phải tài khoản.
+
+### ⚠️ Cache của raw.githubusercontent.com
+
+Sau khi push, `raw.githubusercontent.com` vẫn trả bản cũ khoảng **5 phút** (CDN cache,
+không purge được bằng token hiện tại). Nếu vừa push mà worker còn trả nội dung cũ —
+đó là lý do, không phải lỗi.
+
+`worker.js` xử lý sẵn: dùng **jsDelivr trước, raw GitHub làm fallback**:
+
+```js
+const SOURCES = [
+  'https://cdn.jsdelivr.net/gh/lehuy01092009-bit/Microsoft-Activation-Scripts@master',
+  'https://raw.githubusercontent.com/lehuy01092009-bit/Microsoft-Activation-Scripts/master',
+];
+```
+
+Push xong muốn thấy ngay, purge jsDelivr:
+
+```
+https://purge.jsdelivr.net/gh/lehuy01092009-bit/Microsoft-Activation-Scripts@master/get.ps1
+```
+
+---
+
+## Ghi chú hạ tầng
 
 **Đã xác minh:** zone `htchuai.dpdns.org` active, account
 `6783d1be06b99f51d37827642c3615b6`, zone `03ed913c4a9d899e40f0651218b52035`.
@@ -54,38 +93,29 @@ Route ở tầng edge nên **không cần DNS record** — để trống là đ�
 
 ---
 
-## Bước 3 — Push lên GitHub (**việc còn lại duy nhất**)
+## Cập nhật nội dung sau này (đã push repo rồi)
 
-Worker fetch `get.ps1` từ `raw.githubusercontent.com/htchuai/Microsoft-Activation-Scripts/master`.
-Cần repo public đúng path đó.
-
-1. Tạo repo **public** tên `Microsoft-Activation-Scripts` tại https://github.com/new
-   (không tick README/gitignore — repo đã có sẵn)
-
-2. Push:
+Workflow chuẩn mỗi lần sửa:
 
 ```bash
 cd "C:/Users/lehuy/Downloads/Microsoft-Activation-Scripts-master/Microsoft-Activation-Scripts-master/MAS"
 
-git remote add origin https://github.com/htchuai/Microsoft-Activation-Scripts.git
-git push -u origin master
+# 1. Sua file, nho convert CRLF cho .cmd/.ps1 (xem cuoi file nay)
+
+# 2. Commit + push
+git add -A
+git commit -m "mo ta thay doi"
+git push
+
+# 3. Purge jsDelivr de thay ngay (khong bat buoc, tu het sau ~12h)
+curl.exe "https://purge.jsdelivr.net/gh/lehuy01092009-bit/Microsoft-Activation-Scripts@master/get.ps1"
 ```
 
-Lần push đầu sẽ hỏi đăng nhập — dùng **Personal Access Token** của GitHub
-(Settings → Developer settings → Tokens (classic) → `repo` scope) làm password.
-
-3. Verify:
-
-```powershell
-curl.exe -s https://raw.githubusercontent.com/htchuai/Microsoft-Activation-Scripts/master/get.ps1 | Select-Object -First 3
-```
-
-Nếu repo của bạn dùng tên user khác `htchuai`, sửa `REPO_RAW` trong `worker.js`
-rồi deploy lại.
+**Chỉ cần deploy lại worker khi sửa `worker.js`.** Sửa `get.ps1` / `.cmd` thì push là đủ.
 
 ---
 
-## Bước 4 — Test toàn bộ
+## Test toàn bộ
 
 ```powershell
 # Test 1: trang landing
