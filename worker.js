@@ -31,7 +31,7 @@ const LANDING = `<!DOCTYPE html>
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--fg);
          font:15px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
-  .wrap { max-width:760px; margin:0 auto; padding:56px 24px; }
+  .wrap { max-width:760px; margin:0 auto; padding:56px 24px 72px; }
   h1 { font-size:26px; margin:0 0 6px; letter-spacing:-.4px; }
   .ver { color:var(--accent); font-size:13px; }
   p.lead { color:var(--dim); margin:14px 0 32px; }
@@ -47,8 +47,6 @@ const LANDING = `<!DOCTYPE html>
   table { width:100%; border-collapse:collapse; font-size:13.5px; }
   td { padding:7px 0; border-bottom:1px solid var(--line); }
   td:last-child { color:var(--dim); text-align:right; }
-  footer { color:var(--dim); font-size:12.5px; margin-top:36px;
-           padding-top:20px; border-top:1px solid var(--line); }
 </style>
 </head>
 <body>
@@ -78,12 +76,6 @@ const LANDING = `<!DOCTYPE html>
       <tr><td>Online KMS</td><td>Windows / Office · 180 ngày + renewal</td></tr>
     </table>
   </div>
-
-  <footer>
-    Dựa trên <a href="https://github.com/massgravel/Microsoft-Activation-Scripts">MAS gốc</a>
-    (GPL-3.0) của WindowsAddict &amp; cộng đồng.<br>
-    Source: <a href="https://github.com/lehuy01092009-bit/Microsoft-Activation-Scripts">github.com/lehuy01092009-bit/Microsoft-Activation-Scripts</a>
-  </footer>
 </div>
 </body>
 </html>`;
