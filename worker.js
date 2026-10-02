@@ -9,8 +9,8 @@
  *   GET /separate    -> danh sách file version riêng lẻ
  */
 
-const REPO_RAW = 'https://raw.githubusercontent.com/htchuai/Microsoft-Activation-Scripts/master';
-const REPO_ZIP = 'https://github.com/htchuai/Microsoft-Activation-Scripts/archive/refs/heads/master.zip';
+const REPO_RAW = 'https://raw.githubusercontent.com/lehuy01092009-bit/Microsoft-Activation-Scripts/master';
+const REPO_ZIP = 'https://github.com/lehuy01092009-bit/Microsoft-Activation-Scripts/archive/refs/heads/master.zip';
 const VERSION  = '3.12-htchuai';
 
 // ---- HTML landing ----------------------------------------------------------
@@ -77,7 +77,7 @@ const LANDING = `<!DOCTYPE html>
   <footer>
     Dựa trên <a href="https://github.com/massgravel/Microsoft-Activation-Scripts">MAS gốc</a>
     (GPL-3.0) của WindowsAddict &amp; cộng đồng.<br>
-    Source: <a href="https://github.com/htchuai/Microsoft-Activation-Scripts">github.com/htchuai/Microsoft-Activation-Scripts</a>
+    Source: <a href="https://github.com/lehuy01092009-bit/Microsoft-Activation-Scripts">github.com/lehuy01092009-bit/Microsoft-Activation-Scripts</a>
   </footer>
 </div>
 </body>

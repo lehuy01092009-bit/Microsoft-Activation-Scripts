@@ -18,8 +18,8 @@ $ErrorActionPreference = 'Stop'
 # ---- config -----------------------------------------------------------------
 $ForkName    = 'Microsoft Activation Scripts (htchuai fork)'
 $PackageUrls = @(
-    'https://github.com/htchuai/Microsoft-Activation-Scripts/archive/refs/heads/master.zip',
-    'https://git.htchuai.dpdns.org/Microsoft-Activation-Scripts/archive/refs/heads/master.zip'
+    'https://github.com/lehuy01092009-bit/Microsoft-Activation-Scripts/archive/refs/heads/master.zip',
+    'https://codeload.github.com/lehuy01092009-bit/Microsoft-Activation-Scripts/zip/refs/heads/master'
 )
 $GetSource   = 'https://htchuai.dpdns.org/get'   # used for self-elevation
 $WorkDir     = Join-Path $env:SystemRoot 'Temp\MAS_htchuai'

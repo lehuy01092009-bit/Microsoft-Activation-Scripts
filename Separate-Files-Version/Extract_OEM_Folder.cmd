@@ -72,8 +72,8 @@ exit /b
 
 set "blank="
 set "mas=ht%blank%tps%blank%://htchuai%blank%.dpdns%blank%.org/"
-set "github=ht%blank%tps%blank%://github.com/htchuai/Micro%blank%soft-Acti%blank%vation-Scripts"
-set "selfgit=ht%blank%tps%blank%://git.htchuai%blank%.dpdns%blank%.org/Micr%blank%osoft-Act%blank%ivation-Scripts"
+set "github=ht%blank%tps%blank%://github.com/lehuy01092009-bit/Micro%blank%soft-Acti%blank%vation-Scripts"
+set "selfgit=ht%blank%tps%blank%://github.com/lehuy01092009-bit/Micro%blank%soft-Acti%blank%vation-Scripts"
 
 ::  Check if Null service is working, it's important for the batch script
 
