@@ -9,69 +9,52 @@
 | Tạo `get.ps1` (loader cho `/get`) | ✅ Xong |
 | Tạo `worker.js` + `wrangler.toml` | ✅ Xong |
 | Test worker chạy local | ✅ Xong (`/` → 200, `/nope` → 404) |
-| Init git repo + commit | ✅ Xong (3 commit) |
+| Init git repo + commit | ✅ Xong (4 commit) |
 | Verify CRLF sống sót qua clone | ✅ Xong |
 | Tạo `deploy.ps1` | ✅ Xong |
-| **Upload Worker lên Cloudflare** | ⏳ Cần token của bạn |
-| **Push lên GitHub** | ⏳ Cần bạn tạo repo |
+| **Upload Worker lên Cloudflare** | ✅ **XONG** — `mas-htchuai` |
+| **Gắn domain htchuai.dpdns.org** | ✅ **XONG** — HTTP 200, hết lỗi 530 |
+| **Push lên GitHub** | ⏳ Còn lại — cần bạn |
 
-**Đã xác minh:** zone `htchuai.dpdns.org` đang active trên Cloudflare,
-account ID `6783d1be06b99f51d37827642c3615b6`.
-Domain hiện trả **HTTP 530** — chưa có origin đứng sau, deploy Worker sẽ giải quyết.
+### Trạng thái đã deploy
 
----
+```
+Worker:   mas-htchuai
+Route:    htchuai.dpdns.org/*  ->  mas-htchuai
+workers.dev: mas-htchuai.lehuy01092009.workers.dev
 
-## Bước 1 — Tạo Cloudflare API token
-
-Token trong `~/.cloudflared/cert.pem` chỉ là **Argo Tunnel token**, không đủ quyền
-deploy Worker (đã test: list được, upload bị `No access to the specified resource`).
-
-1. Vào https://dash.cloudflare.com/profile/api-tokens
-2. **Create Token** → **Custom token**
-3. Thêm đúng 3 quyền:
-
-| Scope | Resource | Permission |
-|---|---|---|
-| Account | Workers Scripts | **Edit** |
-| Zone | Workers Routes | **Edit** |
-| Zone | Zone | **Read** |
-
-4. Account Resources: chọn `Lehuy01092009@gmail.com's Account`
-5. Zone Resources: chọn `htchuai.dpdns.org`
-6. Create → copy token
-
-Tên token gợi ý: `mas-deploy`
-
----
-
-## Bước 2 — Deploy
-
-Mở PowerShell tại thư mục này:
-
-```powershell
-cd "C:\Users\lehuy\Downloads\Microsoft-Activation-Scripts-master\Microsoft-Activation-Scripts-master\MAS"
-
-$env:CF_API_TOKEN = "paste-token-vua-tao"
-.\deploy.ps1
+GET /      -> HTTP 200  (landing page)
+GET /nope  -> HTTP 404  (đúng)
+GET /get   -> 502 (upstream 404)  <- CHỜ REPO GITHUB
 ```
 
-Script sẽ: verify token → upload worker → gắn custom domain → test `GET /get`.
+`/get` trả 502 vì worker fetch `get.ps1` từ GitHub — repo chưa tồn tại.
+Push repo xong là endpoint tự chạy, **không cần deploy lại worker**.
 
-Nếu bước gắn domain fail (đôi khi API không cho gắn tự động), làm tay:
+**Đã xác minh:** zone `htchuai.dpdns.org` active, account
+`6783d1be06b99f51d37827642c3615b6`, zone `03ed913c4a9d899e40f0651218b52035`.
 
-1. Dash → **Workers & Pages** → `mas-htchuai`
-2. **Settings** → **Domains & Routes**
-3. **Add** → **Custom Domain** → nhập `htchuai.dpdns.org` → Add
+### Ghi chú về token
 
-DNS record sẽ tự tạo. Thử lại sau 1–2 phút:
+Token `~/.cloudflared/cert.pem` là **Argo Tunnel token** — không deploy được.
+Token API mới (đã dùng) deploy + tạo route OK, **nhưng** 2 endpoint
+gắn custom domain bị chặn `10405 Method not allowed for this authentication scheme`:
 
-```powershell
-curl.exe -i https://htchuai.dpdns.org/get
+- `POST /accounts/{id}/workers/domains`
+- `POST /accounts/{id}/workers/scripts/{name}/domains/records`
+
+Cách vượt: dùng **zone-level route** thay vì custom domain — chạy tốt:
+
 ```
+POST /zones/{zone_id}/workers/routes
+{"pattern":"htchuai.dpdns.org/*","script":"mas-htchuai"}
+```
+
+Route ở tầng edge nên **không cần DNS record** — để trống là đúng.
 
 ---
 
-## Bước 3 — Push lên GitHub
+## Bước 3 — Push lên GitHub (**việc còn lại duy nhất**)
 
 Worker fetch `get.ps1` từ `raw.githubusercontent.com/htchuai/Microsoft-Activation-Scripts/master`.
 Cần repo public đúng path đó.

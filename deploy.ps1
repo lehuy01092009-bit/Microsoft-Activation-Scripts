@@ -95,29 +95,32 @@ if (-not $res.success) {
 }
 Write-Host "        uploaded: $ScriptName" -ForegroundColor DarkGray
 
-# ---- step 3: attach custom domain ------------------------------------------
+# ---- step 3: attach route ---------------------------------------------------
+#
+#  Luu y: 2 endpoint "custom domain" deu bi chan voi token dang dung
+#  (loi 10405 Method not allowed for this authentication scheme):
+#      POST /accounts/{id}/workers/domains
+#      POST /accounts/{id}/workers/scripts/{name}/domains/records
+#  Nen dung zone-level route - da test chay tot.
 
-Write-Host '  [3/4] Gan custom domain...' -ForegroundColor Cyan
+Write-Host '  [3/4] Gan zone route...' -ForegroundColor Cyan
 
-$body = @{
-    zone_id = (Invoke-CF GET "/zones?name=$ZoneName").result[0].id
+$zoneId = (Invoke-CF GET "/zones?name=$ZoneName").result[0].id
+if (-not $zoneId) { throw "Khong tim thay zone $ZoneName" }
+
+# xoa route cu cung pattern (neu co) de tranh trung
+$existing = (Invoke-CF GET "/zones/$zoneId/workers/routes").result |
+            Where-Object { $_.pattern -eq "$ZoneName/*" }
+foreach ($r in $existing) {
+    $null = Invoke-CF DELETE "/zones/$zoneId/workers/routes/$($r.id)"
+}
+
+$route = Invoke-CF POST "/zones/$zoneId/workers/routes" @{
     pattern = "$ZoneName/*"
-    enabled = $true
+    script  = $ScriptName
 }
-
-# Workers Routes custom_domain can't be created via the routes endpoint for
-# apex/subdomains reliably; use the dedicated account-level route API.
-try {
-    $r = Invoke-CF POST "/accounts/$AccountId/workers/scripts/$ScriptName/domains/records" @{
-        zone_id     = $body.zone_id
-        hostname    = $ZoneName
-    }
-    Write-Host "        domain: $ZoneName" -ForegroundColor DarkGray
-} catch {
-    Write-Host '        khong gan duoc domain tu dong (co the da gan roi)' -ForegroundColor DarkYellow
-    Write-Host '        -> vao dashboard: Workers -> mas-htchuai -> Settings -> Domains & Routes' -ForegroundColor DarkYellow
-    Write-Host '           -> Add Custom Domain -> htchuai.dpdns.org' -ForegroundColor DarkYellow
-}
+Write-Host "        route: $($route.result.pattern) -> $($route.result.script)" -ForegroundColor DarkGray
+Write-Host '        (route o tang edge nen khong can DNS record)' -ForegroundColor DarkGray
 
 # ---- step 4: test ----------------------------------------------------------
 
