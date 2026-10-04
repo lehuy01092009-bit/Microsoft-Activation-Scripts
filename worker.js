@@ -94,7 +94,17 @@ async function notFound(request) {
     const u = new URL(request.url);
     u.pathname = '/__mas404_' + Math.random().toString(36).slice(2);
     u.search = '';
-    const r = await fetch(u.toString(), { cf: { cacheTtl: 0 } });
+
+    // PHAI gui kem header cua request goc. Neu khong co User-Agent thi web chinh
+    // se hien "Undefined array key HTTP_USER_AGENT" + modal "Browser Unsupported".
+    const h = new Headers();
+    const ua = request.headers.get('User-Agent');
+    if (ua) h.set('User-Agent', ua);
+    const al = request.headers.get('Accept-Language');
+    if (al) h.set('Accept-Language', al);
+    h.set('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8');
+
+    const r = await fetch(u.toString(), { headers: h, cf: { cacheTtl: 0 } });
     const body = await r.text();
     if (body && body.length > 0) {
       return new Response(body, {
