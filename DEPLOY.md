@@ -138,10 +138,58 @@ và **không** có dòng "Your version of MAS is outdated".
 
 | Route | Trả về |
 |---|---|
-| `/` | Landing page (dark theme, có lệnh chạy) |
-| `/get` | `get.ps1` — dùng cho `irm ... \| iex` |
+| `/get` | Xem bảng bên dưới |
 | `/aio` hoặc `/MAS_AIO.cmd` | `MAS_AIO.cmd` trực tiếp |
 | `/zip` | Redirect 302 → ZIP của repo |
+
+### `/get` — phân biệt theo client và theo IP (2026-10-04)
+
+```
+/get
+├─ request KHÔNG phải trình duyệt (Accept không có text/html)
+│    → trả script get.ps1 (text/plain). Khách `irm ... | iex` chạy bình thường,
+│      chỉ cần key (xem mục Key bên dưới).
+└─ request từ TRÌNH DUYỆT (Accept có text/html)
+     ├─ IP nằm trong danh sách cho phép → trang HTML hiện code + anti DevTools
+     └─ IP khác → 404 (lấy nguyên trang 404 thật của web chính)
+```
+
+**Cách nhận diện trình duyệt:** `Accept` chứa `text/html`. PowerShell `irm` và `curl`
+không bao giờ gửi giá trị này → khách không bị chặn oan. Có thêm lớp chặn phụ:
+UA chứa `powershell|curl|wget|python|libwww|httpclient|winhttp` thì luôn coi là client thật.
+
+**Danh sách IP** lấy từ `https://htchuai.dpdns.org/api/mas/ips?k=<token>`, worker cache
+60 giây trong bộ nhớ. Nếu API lỗi thì giữ danh sách cũ (không tự khoá hết người dùng).
+Thêm/xoá IP tại **Admin → Quản Lý Key MAS → khối "IP được xem code"**.
+
+⚠️ Đổi `MAS_IP_TOKEN` phải sửa **cả hai** nơi:
+`worker.js` và `app/ajax/global/default/mas-ips.php`.
+
+**Anti DevTools** trong trang HTML là bản copy nguyên văn từ `main.min.js` của web chính
+(khi `fuck-devtools = 1`): dùng trick getter `Error.stack` để phát hiện Chrome DevTools,
+phát hiện thì `window.location.href = "//t.me/ThanhPhucDev"`, chạy `setInterval(q, 100)`.
+
+### Deploy lại worker
+
+Sửa `worker.js` thì **phải deploy lại** (không như `get.ps1` chỉ cần push + purge jsDelivr):
+
+```powershell
+$env:CF_API_TOKEN = "..."
+.\deploy.ps1
+```
+
+hoặc gọi thẳng API:
+
+```bash
+curl -X PUT "https://api.cloudflare.com/client/v4/accounts/6783d1be06b99f51d37827642c3615b6/workers/scripts/mas-htchuai" \
+  -H "Authorization: Bearer $TOKEN" \
+  -F 'metadata={"main_module":"worker.js","compatibility_date":"2024-11-01"};type=application/json' \
+  -F 'worker.js=@worker.js;type=application/javascript+module'
+```
+
+Test logic worker trước khi deploy: copy `worker.js` → `_w.mjs`, viết harness `.mjs` gọi
+`worker.fetch(new Request(url, { headers: { 'CF-Connecting-IP': '1.2.3.4', ... } }))`.
+Mock được `CF-Connecting-IP` nên test được cả nhánh 404 mà không cần đổi IP thật.
 
 ---
 
