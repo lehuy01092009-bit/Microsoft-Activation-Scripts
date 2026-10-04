@@ -106,7 +106,12 @@ async function notFound(request) {
 
     const r = await fetch(u.toString(), { headers: h, cf: { cacheTtl: 0 } });
     const body = await r.text();
-    if (body && body.length > 0) {
+
+    // Luoi an toan: neu origin tra ve trang co loi PHP (warning/deprecated/fatal)
+    // thi KHONG tra nguyen xi cho khach - tra trang 404 toi gian thay the.
+    const broken = /Undefined array key|Undefined variable|Fatal error|Parse error|Deprecated:|<b>Warning<\/b>|<b>Notice<\/b>/i.test(body);
+
+    if (body && body.length > 0 && !broken) {
       return new Response(body, {
         status: 404,
         headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
@@ -115,10 +120,21 @@ async function notFound(request) {
   } catch (e) {
     // rot xuong fallback
   }
-  return new Response('Not Found', {
-    status: 404,
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-  });
+  return new Response(
+    '<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<title>404 - Không tìm thấy trang</title></head>' +
+    '<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;' +
+    'background:#04060f;color:#e2e8f0;font:16px/1.6 ui-sans-serif,system-ui,sans-serif;text-align:center">' +
+    '<div style="padding:32px"><div style="font-size:64px;font-weight:800;letter-spacing:.06em;' +
+    'background:linear-gradient(92deg,#38bdf8,#a78bfa,#fbbf24);-webkit-background-clip:text;' +
+    'background-clip:text;color:transparent">404</div>' +
+    '<p style="color:#94a3b8;margin:8px 0 24px">Không tìm thấy trang bạn yêu cầu.</p>' +
+    '<a href="/" style="display:inline-block;padding:12px 26px;border-radius:999px;color:#e0f2fe;' +
+    'text-decoration:none;border:1px solid rgba(125,211,252,.4);background:rgba(8,47,73,.6)">Về trang chủ</a>' +
+    '</div></body></html>',
+    { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }
+  );
 }
 
 /** Trang HTML hien code cho IP duoc phep + anti DevTools giong web chinh */
