@@ -270,6 +270,25 @@ export default {
       case '/zip':
         return Response.redirect(REPO_ZIP, 302);
 
+      // Tai goi qua chinh domain nay -> script khong lo link goc.
+      // Proxy (khong redirect) de khong lo URL that trong qua trinh tai.
+      case '/pkg': {
+        try {
+          const r = await fetch(REPO_ZIP, { cf: { cacheTtl: 300 } });
+          if (!r.ok) return txt('Khong tai duoc goi. Thu lai sau.', 502);
+          return new Response(r.body, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/zip',
+              'Content-Disposition': 'attachment; filename="p.zip"',
+              'Cache-Control': 'no-store',
+            },
+          });
+        } catch (e) {
+          return txt('Khong tai duoc goi. Thu lai sau.', 502);
+        }
+      }
+
       default:
         return txt('Not found.\n\nRoutes: /get  /aio  /zip\n', 404);
     }

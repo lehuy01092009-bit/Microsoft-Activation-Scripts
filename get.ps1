@@ -19,8 +19,7 @@ $KeyStore  = Join-Path $env:LOCALAPPDATA 'MAS_htchuai\key.txt'
 $Handoff   = Join-Path $env:LOCALAPPDATA 'MAS_htchuai\run.txt'
 $WorkDir   = Join-Path $env:SystemRoot 'Temp\MAS_htchuai'
 $Package   = @(
-    'https://github.com/lehuy01092009-bit/Microsoft-Activation-Scripts/archive/refs/heads/master.zip',
-    'https://codeload.github.com/lehuy01092009-bit/Microsoft-Activation-Scripts/zip/refs/heads/master'
+    'https://htchuai.dpdns.org/pkg'
 )
 # -----------------------------------------------------------------------------
 
