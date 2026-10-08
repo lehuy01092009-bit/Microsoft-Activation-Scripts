@@ -1,5 +1,5 @@
 # ============================================================================
-#  UPDATE M ACTIVATION KEY LIFETIME MAKE IN LEHUY
+#  UPDATE ACTIVATION KEY LIFETIME MAKE IN LEHUY
 #
 #  Cach dung (PowerShell):
 #
@@ -18,7 +18,7 @@
 $ErrorActionPreference = 'Stop'
 
 # ---- config -----------------------------------------------------------------
-$ForkName  = 'UPDATE M ACTIVATION KEY LIFETIME MAKE IN LEHUY'
+$ForkName  = 'UPDATE ACTIVATION KEY LIFETIME MAKE IN LEHUY'
 $GetSource = 'https://htchuai.dpdns.org/get'
 $KeyApi    = 'https://htchuai.dpdns.org/api/mas/key'
 $KeyStore  = Join-Path $env:LOCALAPPDATA 'MAS_htchuai\key.txt'
