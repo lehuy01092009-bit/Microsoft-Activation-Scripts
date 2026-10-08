@@ -172,6 +172,14 @@ function codePage(script, ip) {
   <p class="lead">Trang nay chi hien voi IP nam trong danh sach cho phep.</p>
 
   <div class="card">
+    <div class="note" style="margin-bottom:8px">Cac lenh co the dung khi duoc hoi:</div>
+    <div class="note"><code>/HWID</code> &nbsp;&nbsp;&nbsp; kich hoat Windows</div>
+    <div class="note"><code>/Ohook</code> &nbsp;&nbsp; kich hoat Office</div>
+    <div class="note"><code>/Z-</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xoa kich hoat</div>
+    <div class="note" style="margin-top:8px">Bo trong + Enter de vao menu chinh.</div>
+  </div>
+
+  <div class="card">
     <div class="row">
       <div>
         <div class="note">IP cua ban: <code>${esc(ip)}</code></div>

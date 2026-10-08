@@ -5,6 +5,12 @@
 #
 #      irm https://htchuai.dpdns.org/get | iex
 #
+#  Cac lenh co the dung khi duoc hoi:
+#      /HWID    kich hoat Windows
+#      /Ohook   kich hoat Office
+#      /Z-      xoa kich hoat
+#      (bo trong + Enter de vao menu chinh)
+#
 #  Script se hoi KEY va LENH ngay tai cua so nay, roi moi mo cua so Admin de chay.
 #  Chay khong hoi (tu dong): dat $env:MAS_KEY truoc khi chay.
 # ============================================================================
@@ -169,16 +175,14 @@ if ($Stage -ne 'run') {
     }
 
     # ---- lenh ----
+    # KHONG in danh sach lenh ra console nua — cong thuc lenh chi hien tren web.
     $passed = @($args) -join ' '
     if ($passed.Trim() -ne '') {
         $Opts = $passed.Trim()
     } else {
         Write-Host ''
-        Write-Host '  Nhap lenh (bo trong + Enter de vao menu chinh):' -ForegroundColor Cyan
-        Write-Host '    /HWID   kich hoat Windows' -ForegroundColor DarkGray
-        Write-Host '    /Ohook  kich hoat Office' -ForegroundColor DarkGray
-        Write-Host '    /Z-     xoa kich hoat' -ForegroundColor DarkGray
-        $Opts = (Read-Host '  Lenh').Trim()
+        Write-Host '  Xem cac lenh tai: https://htchuai.dpdns.org' -ForegroundColor DarkGray
+        $Opts = (Read-Host '  Nhap lenh (bo trong + Enter de vao menu chinh)').Trim()
     }
 
     $env:MAS_KEY   = $in
