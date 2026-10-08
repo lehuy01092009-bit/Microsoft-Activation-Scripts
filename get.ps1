@@ -1,5 +1,5 @@
 # ============================================================================
-#  Microsoft Activation Scripts - Le Huy
+#  UPDATE M ACTIVATION KEY LIFETIME MAKE IN LEHUY
 #
 #  Cach dung (PowerShell):
 #
@@ -12,7 +12,7 @@
 $ErrorActionPreference = 'Stop'
 
 # ---- config -----------------------------------------------------------------
-$ForkName  = 'Microsoft Activation Scripts'
+$ForkName  = 'UPDATE M ACTIVATION KEY LIFETIME MAKE IN LEHUY'
 $GetSource = 'https://htchuai.dpdns.org/get'
 $KeyApi    = 'https://htchuai.dpdns.org/api/mas/key'
 $KeyStore  = Join-Path $env:LOCALAPPDATA 'MAS_htchuai\key.txt'
