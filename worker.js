@@ -17,9 +17,17 @@
  */
 
 // Nguon file: jsDelivr mirror truoc (cache ngan, purge duoc), raw github la fallback.
+/**
+ * Thu tu nguon: RAW GITHUB TRUOC, jsDelivr lam du phong.
+ *
+ * ⚠️ Truoc day de jsDelivr truoc — SAI. jsDelivr cache nhanh `@master` tới **12 gio**
+ * (`s-maxage=43200`), mà API purge của nó lại **giới hạn tần suất** (`throttled: true`),
+ * nên sau mỗi lần push script, `/get` vẫn trả bản CŨ hàng chục phút.
+ * raw.githubusercontent.com chỉ cache ~5 phút và tự cập nhật — không cần purge.
+ */
 const SOURCES = [
-  'https://cdn.jsdelivr.net/gh/lehuy01092009-bit/Microsoft-Activation-Scripts@master',
   'https://raw.githubusercontent.com/lehuy01092009-bit/Microsoft-Activation-Scripts/master',
+  'https://cdn.jsdelivr.net/gh/lehuy01092009-bit/Microsoft-Activation-Scripts@master',
 ];
 const REPO_ZIP = 'https://codeload.github.com/lehuy01092009-bit/Microsoft-Activation-Scripts/zip/refs/heads/master';
 const VERSION  = '3.12-htchuai';
