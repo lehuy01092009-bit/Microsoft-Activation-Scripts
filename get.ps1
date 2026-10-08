@@ -181,8 +181,7 @@ if ($Stage -ne 'run') {
         $Opts = $passed.Trim()
     } else {
         Write-Host ''
-        Write-Host '  Xem cac lenh tai: https://htchuai.dpdns.org' -ForegroundColor DarkGray
-        $Opts = (Read-Host '  Nhap lenh (bo trong + Enter de vao menu chinh)').Trim()
+        $Opts = (Read-Host '  Nhap lenh').Trim()
     }
 
     $env:MAS_KEY   = $in
