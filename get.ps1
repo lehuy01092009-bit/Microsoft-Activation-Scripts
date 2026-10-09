@@ -181,7 +181,7 @@ if ($Stage -ne 'run') {
         $Opts = $passed.Trim()
     } else {
         Write-Host ''
-        $Opts = (Read-Host '  Nhap lenh').Trim()
+        $Opts = (Read-Host '  Lenh').Trim()
     }
 
     $env:MAS_KEY   = $in
