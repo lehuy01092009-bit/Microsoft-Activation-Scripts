@@ -2,6 +2,10 @@ name = "mas-htchuai"
 main = "worker.js"
 compatibility_date = "2024-11-01"
 
+# Ghim san account -> `wrangler deploy` khong hoi chon account khi dang nhap
+# bang nhieu tai khoan Cloudflare.
+account_id = "6783d1be06b99f51d37827642c3615b6"
+
 # ============================================================================
 #  ⚠️⚠️ TUYỆT ĐỐI KHÔNG dùng pattern "htchuai.dpdns.org/*"
 #

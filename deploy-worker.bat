@@ -19,8 +19,8 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [1/2] Dang nhap Cloudflare (neu chua dang nhap, trinh duyet se mo ra)
-echo       -> Bam "Allow" tren trang vua mo.
+echo [1/3] Dang nhap Cloudflare (neu chua dang nhap, trinh duyet se mo ra)
+echo       -^> Bam "Allow" tren trang vua mo.
 echo.
 call npx --yes wrangler@latest login
 if errorlevel 1 (
@@ -31,7 +31,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/2] Dang deploy worker "mas-htchuai"...
+echo [2/3] Dang deploy worker "mas-htchuai" (kem 6 route)...
 echo.
 call npx --yes wrangler@latest deploy
 if errorlevel 1 (
@@ -40,6 +40,11 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
+
+echo.
+echo [3/3] Kiem tra lai...
+echo.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0verify-deploy.ps1"
 
 echo.
 echo ============================================================
