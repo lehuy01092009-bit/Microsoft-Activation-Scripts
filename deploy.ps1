@@ -95,7 +95,16 @@ if (-not $res.success) {
 }
 Write-Host "        uploaded: $ScriptName" -ForegroundColor DarkGray
 
-# ---- step 3: attach route ---------------------------------------------------
+# ---- step 3: attach routes --------------------------------------------------
+#
+#  ⚠️⚠️ KHONG dung "$ZoneName/*" — route do NUOT CA DOMAIN, worker se tra loi
+#  moi path va website well-known (dash.php, /tx/, /tx/admin/, /edit/,
+#  /admin/dashboard...) CHET NGAY. Chi 6 path duoi day thuoc worker; phan con
+#  lai roi xuong tunnel -> localhost:8090 -> Apache.
+#
+#  ⚠️ Danh sach $wanted nay PHAI DONG BO voi:
+#       - $wanted trong %LOCALAPPDATA%\PhpStack\fix-mas-route.ps1
+#       - `routes` trong wrangler.toml
 #
 #  Luu y: 2 endpoint "custom domain" deu bi chan voi token dang dung
 #  (loi 10405 Method not allowed for this authentication scheme):
@@ -108,36 +117,75 @@ Write-Host '  [3/4] Gan zone route...' -ForegroundColor Cyan
 $zoneId = (Invoke-CF GET "/zones?name=$ZoneName").result[0].id
 if (-not $zoneId) { throw "Khong tim thay zone $ZoneName" }
 
-# xoa route cu cung pattern (neu co) de tranh trung
-$existing = (Invoke-CF GET "/zones/$zoneId/workers/routes").result |
-            Where-Object { $_.pattern -eq "$ZoneName/*" }
+$wanted = @(
+    "$ZoneName/get",
+    "$ZoneName/office",
+    "$ZoneName/aio",
+    "$ZoneName/zip",
+    "$ZoneName/MAS_AIO.cmd",
+    "$ZoneName/pkg"
+)
+
+# xoa route cu KHONG nam trong danh sach (vd route /* con sot lai)
+$existing = (Invoke-CF GET "/zones/$zoneId/workers/routes").result
 foreach ($r in $existing) {
-    $null = Invoke-CF DELETE "/zones/$zoneId/workers/routes/$($r.id)"
+    if ($wanted -notcontains $r.pattern) {
+        Write-Host "        xoa route la: $($r.pattern)" -ForegroundColor Yellow
+        $null = Invoke-CF DELETE "/zones/$zoneId/workers/routes/$($r.id)"
+    }
 }
 
-$route = Invoke-CF POST "/zones/$zoneId/workers/routes" @{
-    pattern = "$ZoneName/*"
-    script  = $ScriptName
+# tao route con thieu
+$existing = (Invoke-CF GET "/zones/$zoneId/workers/routes").result
+foreach ($pat in $wanted) {
+    if ($existing | Where-Object { $_.pattern -eq $pat }) {
+        Write-Host "        da co: $pat" -ForegroundColor DarkGray
+        continue
+    }
+    $res = Invoke-CF POST "/zones/$zoneId/workers/routes" @{ pattern = $pat; script = $ScriptName }
+    Write-Host "        them: $($res.result.pattern) -> $($res.result.script)" -ForegroundColor DarkGray
 }
-Write-Host "        route: $($route.result.pattern) -> $($route.result.script)" -ForegroundColor DarkGray
-Write-Host '        (route o tang edge nen khong can DNS record)' -ForegroundColor DarkGray
+
+Write-Host '        --- ket qua cuoi ---' -ForegroundColor DarkGray
+(Invoke-CF GET "/zones/$zoneId/workers/routes").result |
+    ForEach-Object { Write-Host ("        {0,-42} -> {1}" -f $_.pattern, $_.script) -ForegroundColor DarkGray }
 
 # ---- step 4: test ----------------------------------------------------------
 
 Write-Host '  [4/4] Test endpoint...' -ForegroundColor Cyan
-try {
-    $t = Invoke-WebRequest -Uri "https://$ZoneName/get" -UseBasicParsing -TimeoutSec 25
-    Write-Host "        GET /get -> HTTP $($t.StatusCode), $($t.Content.Length) bytes" -ForegroundColor DarkGray
-    if ($t.Content -match 'MAS') {
-        Write-Host ''
-        Write-Host '  THANH CONG' -ForegroundColor Green
-        Write-Host ''
-        Write-Host '    irm https://htchuai.dpdns.org/get | iex' -ForegroundColor White
-        Write-Host ''
-    } else {
-        Write-Host '        canh bao: noi dung tra ve bat thuong' -ForegroundColor DarkYellow
+Start-Sleep -Seconds 4
+
+$allOk = $true
+foreach ($t in @('/get', '/office')) {
+    try {
+        $r = Invoke-WebRequest -Uri "https://$ZoneName$t" -UseBasicParsing -TimeoutSec 30
+        $good = $r.Content -match 'MAS|OFFICE|LEHUY'
+        if (-not $good) { $allOk = $false }
+        Write-Host ("        GET {0,-9} -> HTTP {1}  ({2} bytes) {3}" -f $t, $r.StatusCode, $r.Content.Length, $(if ($good) { 'OK' } else { 'NOI DUNG BAT THUONG' })) -ForegroundColor DarkGray
+    } catch {
+        $allOk = $false
+        Write-Host ("        GET {0,-9} -> LOI: {1}" -f $t, $_.Exception.Message) -ForegroundColor DarkYellow
     }
+}
+
+# QUAN TRONG: xac nhan website well-known van song (route /* khong duoc lot vao)
+try {
+    $h = Invoke-WebRequest -Uri "https://$ZoneName/dash.php" -UseBasicParsing -TimeoutSec 30
+    Write-Host ("        GET /dash.php -> HTTP {0}  ({1} bytes) - website OK" -f $h.StatusCode, $h.Content.Length) -ForegroundColor DarkGray
 } catch {
-    Write-Host "        chua truy cap duoc: $($_.Exception.Message)" -ForegroundColor DarkYellow
-    Write-Host '        co the DNS chua propagate - doi 1-2 phut roi thu lai' -ForegroundColor DarkYellow
+    Write-Host '        [!] WEBSITE WELL-KNOWN KHONG TRA LOI!' -ForegroundColor Red
+    Write-Host '            Kiem tra lai route - co the da bi dat thanh htchuai.dpdns.org/*' -ForegroundColor Red
+    $allOk = $false
+}
+
+Write-Host ''
+if ($allOk) {
+    Write-Host '  THANH CONG' -ForegroundColor Green
+    Write-Host ''
+    Write-Host '    irm https://htchuai.dpdns.org/get    | iex    (Windows)' -ForegroundColor White
+    Write-Host '    irm https://htchuai.dpdns.org/office | iex    (Office)' -ForegroundColor White
+    Write-Host ''
+} else {
+    Write-Host '  CO LOI - xem thong bao phia tren' -ForegroundColor Red
+    Write-Host ''
 }

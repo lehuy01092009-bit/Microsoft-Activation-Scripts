@@ -2,12 +2,27 @@ name = "mas-htchuai"
 main = "worker.js"
 compatibility_date = "2024-11-01"
 
-# Domain sẽ phục vụ worker này.
-# Sau khi deploy, chạy: npx wrangler deploy
-# rồi vào Cloudflare dashboard -> Workers -> mas-htchuai -> Settings -> Domains & Routes
-# -> Add Custom Domain -> htchuai.dpdns.org
+# ============================================================================
+#  ⚠️⚠️ TUYỆT ĐỐI KHÔNG dùng pattern "htchuai.dpdns.org/*"
+#
+#  Route đó NUỐT CẢ DOMAIN -> worker mas-htchuai sẽ trả lời mọi path và
+#  website well-known (dash.php, /tx/, /tx/admin/, /edit/, /admin/dashboard...)
+#  CHẾT NGAY. (Lỗi này đã từng xảy ra, phải chạy fix-mas-route.ps1 để cứu.)
+#
+#  Chỉ 6 path dưới đây thuộc worker. Mọi path khác rơi xuống tunnel
+#  (cloudflared -> localhost:8090 -> Apache -> well-known).
+#
+#  ⚠️ Danh sách này PHẢI ĐỒNG BỘ với $wanted trong
+#     %LOCALAPPDATA%\PhpStack\fix-mas-route.ps1
+#     (script đó XOÁ mọi route không nằm trong $wanted).
+# ============================================================================
 routes = [
-  { pattern = "htchuai.dpdns.org/*", custom_domain = true }
+  { pattern = "htchuai.dpdns.org/get",         zone_name = "htchuai.dpdns.org" },
+  { pattern = "htchuai.dpdns.org/office",      zone_name = "htchuai.dpdns.org" },
+  { pattern = "htchuai.dpdns.org/aio",         zone_name = "htchuai.dpdns.org" },
+  { pattern = "htchuai.dpdns.org/zip",         zone_name = "htchuai.dpdns.org" },
+  { pattern = "htchuai.dpdns.org/MAS_AIO.cmd", zone_name = "htchuai.dpdns.org" },
+  { pattern = "htchuai.dpdns.org/pkg",         zone_name = "htchuai.dpdns.org" },
 ]
 
 [observability]

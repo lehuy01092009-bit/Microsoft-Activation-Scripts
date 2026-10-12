@@ -4,8 +4,12 @@ cd /d "%~dp0"
 
 echo ============================================================
 echo   DEPLOY WORKER MAS len Cloudflare
-echo   (chay 1 lan sau moi khi sua worker.js)
+echo   (chay 1 lan sau moi khi sua worker.js / wrangler.toml)
 echo ============================================================
+echo.
+echo   Worker se giu 6 route:
+echo     /get  /office  /aio  /zip  /MAS_AIO.cmd  /pkg
+echo   (KHONG dung /* — route do nuot ca domain, website se chet)
 echo.
 
 where node >nul 2>nul
@@ -40,6 +44,8 @@ if errorlevel 1 (
 echo.
 echo ============================================================
 echo   XONG! Worker da duoc cap nhat.
-echo   Thu lai:  irm https://htchuai.dpdns.org/get ^| iex
+echo.
+echo     Windows:  irm https://htchuai.dpdns.org/get    ^| iex
+echo     Office :  irm https://htchuai.dpdns.org/office ^| iex
 echo ============================================================
 pause

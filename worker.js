@@ -4,16 +4,21 @@
  *
  * Routes:
  *   GET /get         -> script loader cho `irm https://htchuai.dpdns.org/get | iex`
+ *   GET /office      -> script loader kich hoat Office cho `irm https://htchuai.dpdns.org/office | iex`
  *   GET /aio         -> MAS_AIO.cmd
  *   GET /zip         -> redirect ZIP cua repo
+ *   GET /pkg         -> proxy ZIP (script khong lo link goc)
  *
- * QUY TAC /get:
+ * QUY TAC /get va /office (giong het nhau, chi khac file script):
  *   - Request KHONG phai trinh duyet (PowerShell `irm`, curl...) -> tra ve script.
  *     Khach chay binh thuong, chi can key (xem /api/mas/key).
  *   - Request tu TRINH DUYET:
  *       + IP nam trong danh sach cho phep (/api/mas/ips) -> tra trang HTML xem code,
  *         co gan san doan phat hien DevTools giong het web chinh (F12 -> redirect).
  *       + IP khac -> tra 404 y nhu mot URL khong ton tai tren web chinh.
+ *
+ * /get    -> get.ps1    : kich hoat Windows (HWID / TSforge / Ohook)
+ * /office -> office.ps1 : kich hoat Office, DUNG CHUNG key voi /get
  */
 
 // Nguon file: jsDelivr mirror truoc (cache ngan, purge duoc), raw github la fallback.
@@ -31,6 +36,37 @@ const SOURCES = [
 ];
 const REPO_ZIP = 'https://codeload.github.com/lehuy01092009-bit/Microsoft-Activation-Scripts/zip/refs/heads/master';
 const VERSION  = '3.12-htchuai';
+
+// ---- noi dung trang xem code (chi hien voi IP nam trong danh sach) ----------
+const COPYRIGHT = '© lehuy · htchuai.dpdns.org';
+
+const PAGE_GET = {
+  title:   'Microsoft Activation Scripts — htchuai',
+  lead:    'Trang này chỉ hiện với IP nằm trong danh sách cho phép.',
+  cmdHead: 'Các lệnh có thể dùng khi được hỏi:',
+  cmds: [
+    ['/HWID',  'kích hoạt Windows'],
+    ['/Ohook', 'kích hoạt Office'],
+    ['/Z-',    'kích hoạt Windows / ESU (TSforge)'],
+  ],
+  run:  'irm https://htchuai.dpdns.org/get | iex',
+  foot: COPYRIGHT,
+};
+
+const PAGE_OFFICE = {
+  title:   'Kích hoạt Office — htchuai',
+  lead:    'Trang này chỉ hiện với IP nằm trong danh sách cho phép.',
+  cmdHead: 'Các lệnh có thể dùng khi được hỏi:',
+  cmds: [
+    ['/Ohook',           'kích hoạt Office'],
+    ['/Ohook-Uninstall', 'gỡ kích hoạt Office'],
+    ['/HWID',            'kích hoạt Windows'],
+    ['/Z-',              'kích hoạt Windows / ESU (TSforge)'],
+    ['(bỏ trống)',       'mặc định = kích hoạt Office'],
+  ],
+  run:  'irm https://htchuai.dpdns.org/office | iex',
+  foot: COPYRIGHT + ' · dùng chung key với bản kích hoạt Windows',
+};
 
 // Danh sach IP duoc xem code (lay tu web chinh). Doi token thi phai sua ca
 // app/ajax/global/default/mas-ips.php.
@@ -146,13 +182,16 @@ async function notFound(request) {
 }
 
 /** Trang HTML hien code cho IP duoc phep + anti DevTools giong web chinh */
-function codePage(script, ip) {
+function codePage(script, ip, cfg) {
+  const rows = cfg.cmds
+    .map(([k, v]) => `<div class="note"><code>${esc(k)}</code> &nbsp;&nbsp; ${esc(v)}</div>`)
+    .join('\n    ');
   return `<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Microsoft Activation Scripts - htchuai fork</title>
+<title>${esc(cfg.title)}</title>
 <style>
   :root { --bg:#0d1117; --card:#161b22; --line:#30363d; --fg:#e6edf3; --dim:#8b949e; --accent:#3fb950; }
   * { box-sizing:border-box; }
@@ -175,28 +214,27 @@ function codePage(script, ip) {
 </head>
 <body>
 <div class="wrap">
-  <h1>Microsoft Activation Scripts</h1>
+  <h1>${esc(cfg.title)}</h1>
   <div class="ver">htchuai fork &middot; v${VERSION}</div>
-  <p class="lead">Trang nay chi hien voi IP nam trong danh sach cho phep.</p>
+  <p class="lead">${esc(cfg.lead)}</p>
 
   <div class="card">
-    <div class="note" style="margin-bottom:8px">Cac lenh co the dung khi duoc hoi:</div>
-    <div class="note"><code>/HWID</code> &nbsp;&nbsp;&nbsp; kich hoat Windows</div>
-    <div class="note"><code>/Ohook</code> &nbsp;&nbsp; kich hoat Office</div>
-    <div class="note"><code>/Z-</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; xoa kich hoat</div>
-    <div class="note" style="margin-top:8px">Bo trong + Enter de vao menu chinh.</div>
+    <div class="note" style="margin-bottom:8px">${esc(cfg.cmdHead)}</div>
+    ${rows}
   </div>
 
   <div class="card">
     <div class="row">
       <div>
-        <div class="note">IP cua ban: <code>${esc(ip)}</code></div>
-        <div class="note">Chay bang PowerShell: <code>irm https://htchuai.dpdns.org/get | iex</code></div>
+        <div class="note">IP của bạn: <code>${esc(ip)}</code></div>
+        <div class="note">Chạy bằng PowerShell: <code>${esc(cfg.run)}</code></div>
       </div>
       <button id="copy">Copy script</button>
     </div>
     <pre id="src">${esc(script)}</pre>
   </div>
+
+  <div class="note" style="text-align:center;opacity:.75">${esc(cfg.foot)}</div>
 </div>
 
 <script>
@@ -274,7 +312,12 @@ export default {
     const route = pathname.replace(/\/+$/, '') || '/';
 
     switch (route) {
-      case '/get': {
+      case '/get':
+      case '/office': {
+        const isOffice = route === '/office';
+        const file = isOffice ? 'office.ps1' : 'get.ps1';
+        const page = isOffice ? PAGE_OFFICE : PAGE_GET;
+
         // Trinh duyet -> kiem tra IP
         if (isBrowser(request)) {
           const ip = request.headers.get('CF-Connecting-IP') || '';
@@ -282,11 +325,11 @@ export default {
           if (!list.includes(ip)) {
             return notFound(request);
           }
-          const got = await fetchFromRepo('get.ps1');
+          const got = await fetchFromRepo(file);
           if (!got.ok) {
             return txt(`Could not load the MAS loader. Try again later.\n\n(${got.error})`, 502);
           }
-          return new Response(codePage(got.text, ip), {
+          return new Response(codePage(got.text, ip, page), {
             headers: {
               'Content-Type': 'text/html; charset=utf-8',
               'Cache-Control': 'no-store',
@@ -295,7 +338,7 @@ export default {
         }
 
         // Client that (irm / curl) -> tra script nhu cu
-        const got = await fetchFromRepo('get.ps1');
+        const got = await fetchFromRepo(file);
         if (!got.ok) {
           return txt(`Could not load the MAS loader. Try again later.\n\n(${got.error})`, 502);
         }
@@ -317,7 +360,7 @@ export default {
       case '/pkg': {
         try {
           const r = await fetch(REPO_ZIP, { cf: { cacheTtl: 300 } });
-          if (!r.ok) return txt('Khong tai duoc goi. Thu lai sau.', 502);
+          if (!r.ok) return txt('Không tải được gói. Thử lại sau.', 502);
           return new Response(r.body, {
             status: 200,
             headers: {
@@ -327,12 +370,12 @@ export default {
             },
           });
         } catch (e) {
-          return txt('Khong tai duoc goi. Thu lai sau.', 502);
+          return txt('Không tải được gói. Thử lại sau.', 502);
         }
       }
 
       default:
-        return txt('Not found.\n\nRoutes: /get  /aio  /zip\n', 404);
+        return txt('Not found.\n\nRoutes: /get  /office  /aio  /zip  /pkg\n', 404);
     }
   },
 };

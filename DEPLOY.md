@@ -16,11 +16,13 @@
 | **Gắn domain htchuai.dpdns.org** | ✅ **XONG** — HTTP 200, hết lỗi 530 |
 | **Push lên GitHub** | ✅ **XONG** — `lehuy01092009-bit/Microsoft-Activation-Scripts` |
 | **Test end-to-end** | ✅ **XONG** — cả 5 route đều đúng |
+| **Thêm `/office`** (kích hoạt Office, tiếng Việt có dấu) | ✅ code xong — ⏳ **cần deploy worker** (`deploy-worker.bat`) |
 
 ## Lệnh đã chạy được
 
 ```powershell
-irm https://htchuai.dpdns.org/get | iex
+irm https://htchuai.dpdns.org/get    | iex    # kích hoạt Windows
+irm https://htchuai.dpdns.org/office | iex    # kích hoạt Office
 ```
 
 ### Trạng thái đã deploy
@@ -138,9 +140,33 @@ và **không** có dòng "Your version of MAS is outdated".
 
 | Route | Trả về |
 |---|---|
-| `/get` | Xem bảng bên dưới |
+| `/get` | Loader kích hoạt **Windows** (`get.ps1`) |
+| `/office` | Loader kích hoạt **Office** (`office.ps1`) — **dùng chung key với `/get`** |
 | `/aio` hoặc `/MAS_AIO.cmd` | `MAS_AIO.cmd` trực tiếp |
 | `/zip` | Redirect 302 → ZIP của repo |
+| `/pkg` | Proxy ZIP (không lộ link gốc trong lúc tải) |
+
+### `/office` — kích hoạt Office (2026-10-12)
+
+`irm https://htchuai.dpdns.org/office | iex`
+
+- Toàn bộ giao diện **tiếng Việt có dấu** (đã set `[Console]::OutputEncoding = UTF8`).
+- **Dùng chung key với `/get`** — cùng `POST /api/mas/key`, cùng file lưu key
+  `%LOCALAPPDATA%\MAS_htchuai\key.txt`. Khách đã nhập key bên `/get` thì `/office` không hỏi lại.
+- Bỏ trống ở ô `Lệnh` + Enter ⇒ **mặc định `/Ohook`** (kích hoạt Office).
+- Handoff sang cửa sổ Admin dùng file riêng `office-run.txt` (không đụng `run.txt` của `/get`).
+- Thư mục tạm riêng: `%SystemRoot%\Temp\MAS_htchuai_office`.
+
+| Lệnh | Việc |
+|---|---|
+| `/Ohook` | kích hoạt Office |
+| `/Ohook-Uninstall` | gỡ kích hoạt Office |
+| `/HWID` | kích hoạt Windows |
+| `/Z-` | kích hoạt Windows / ESU (TSforge) |
+| *(bỏ trống)* | mặc định `/Ohook` |
+
+Cả `/get` và `/office` chia sẻ cùng một nhánh code trong `worker.js` (`case '/get': case '/office':`),
+chỉ khác file script và nội dung trang HTML xem code (`PAGE_GET` / `PAGE_OFFICE`).
 
 ### `/get` — phân biệt theo client và theo IP (2026-10-04)
 
@@ -171,14 +197,42 @@ phát hiện thì `window.location.href = "//t.me/ThanhPhucDev"`, chạy `setInt
 
 ### Deploy lại worker
 
-Sửa `worker.js` thì **phải deploy lại** (không như `get.ps1` chỉ cần push + purge jsDelivr):
+Sửa `worker.js` thì **phải deploy lại** (không như `get.ps1`/`office.ps1` chỉ cần push):
 
 ```powershell
 $env:CF_API_TOKEN = "..."
 .\deploy.ps1
 ```
 
-hoặc gọi thẳng API:
+Hoặc double-click **`deploy-worker.bat`** (dùng `wrangler login` + `wrangler deploy`,
+**không cần API token**, chỉ cần bấm "Allow" trên trình duyệt).
+
+### ⚠️⚠️ Route — TUYỆT ĐỐI không dùng `htchuai.dpdns.org/*`
+
+Route `/*` **nuốt cả domain**: worker sẽ trả lời mọi path và website well-known
+(`dash.php`, `/tx/`, `/tx/admin/`, `/edit/`, `/admin/dashboard`…) **chết ngay**.
+
+Worker chỉ giữ **6 route**, mọi path khác rơi xuống tunnel → `localhost:8090` → Apache:
+
+```
+/get  /office  /aio  /zip  /MAS_AIO.cmd  /pkg
+```
+
+⚠️ Danh sách này phải **đồng bộ ở 3 chỗ** — lệch một chỗ là hỏng:
+
+| File | Biến |
+|---|---|
+| `worker.js` | `switch (route)` |
+| `wrangler.toml` | `routes = [...]` |
+| `%LOCALAPPDATA%\PhpStack\fix-mas-route.ps1` | `$wanted` |
+
+`deploy.ps1` và `fix-mas-route.ps1` đều **xoá mọi route không nằm trong danh sách**,
+nên thêm endpoint mới mà quên khai báo ⇒ lần chạy sau sẽ xoá mất route đó
+(đã từng xảy ra: `/pkg` bị thiếu trong `$wanted`).
+
+`deploy.ps1` bước [4/4] có kiểm tra `GET /dash.php` để chắc website còn sống.
+
+#### Hoặc gọi thẳng API (bỏ qua `deploy.ps1`)
 
 ```bash
 curl -X PUT "https://api.cloudflare.com/client/v4/accounts/6783d1be06b99f51d37827642c3615b6/workers/scripts/mas-htchuai" \
@@ -216,7 +270,7 @@ import glob
 files = (glob.glob('All-In-One-Version-KL/*.cmd') +
          glob.glob('Separate-Files-Version/*.cmd') +
          glob.glob('Separate-Files-Version/Activators/*.cmd') +
-         ['get.ps1', 'deploy.ps1'])
+         ['get.ps1', 'office.ps1', 'deploy.ps1'])
 for f in files:
     d = open(f, 'rb').read()
     d = d.replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
