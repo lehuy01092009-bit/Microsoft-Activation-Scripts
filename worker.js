@@ -4,10 +4,15 @@
  *
  * Routes:
  *   GET /get         -> script loader cho `irm https://htchuai.dpdns.org/get | iex`
- *   GET /office      -> script loader kich hoat Office cho `irm https://htchuai.dpdns.org/office | iex`
  *   GET /aio         -> MAS_AIO.cmd
  *   GET /zip         -> redirect ZIP cua repo
  *   GET /pkg         -> proxy ZIP (script khong lo link goc)
+ *
+ * ⚠️ `/office` (kich hoat Office) KHONG co route o day — no do well-known
+ *    phuc vu tai `well-known\function\mas\office.php` (RewriteRule ^office$).
+ *    Nhanh `case '/office'` ben duoi chi la DU PHONG: chi chay neu sau nay co
+ *    nguoi them route /office cho worker. Dung them route do lam gi, vi no se
+ *    "che" mat ban cua well-known.
  *
  * QUY TAC /get va /office (giong het nhau, chi khac file script):
  *   - Request KHONG phai trinh duyet (PowerShell `irm`, curl...) -> tra ve script.
@@ -19,6 +24,7 @@
  *
  * /get    -> get.ps1    : kich hoat Windows (HWID / TSforge / Ohook)
  * /office -> office.ps1 : kich hoat Office, DUNG CHUNG key voi /get
+ *                         (binh thuong do well-known phuc vu, xem ghi chu tren)
  */
 
 // Nguon file: jsDelivr mirror truoc (cache ngan, purge duoc), raw github la fallback.

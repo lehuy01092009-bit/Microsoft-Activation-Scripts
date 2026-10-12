@@ -7,8 +7,9 @@ echo   DEPLOY WORKER MAS len Cloudflare
 echo   (chay 1 lan sau moi khi sua worker.js / wrangler.toml)
 echo ============================================================
 echo.
-echo   Worker se giu 6 route:
-echo     /get  /office  /aio  /zip  /MAS_AIO.cmd  /pkg
+echo   Worker se giu 5 route:
+echo     /get  /aio  /zip  /MAS_AIO.cmd  /pkg
+echo   (/office do well-known phuc vu, KHONG thuoc worker)
 echo   (KHONG dung /* — route do nuot ca domain, website se chet)
 echo.
 

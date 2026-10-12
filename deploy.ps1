@@ -99,8 +99,12 @@ Write-Host "        uploaded: $ScriptName" -ForegroundColor DarkGray
 #
 #  ⚠️⚠️ KHONG dung "$ZoneName/*" — route do NUOT CA DOMAIN, worker se tra loi
 #  moi path va website well-known (dash.php, /tx/, /tx/admin/, /edit/,
-#  /admin/dashboard...) CHET NGAY. Chi 6 path duoi day thuoc worker; phan con
+#  /admin/dashboard...) CHET NGAY. Chi 5 path duoi day thuoc worker; phan con
 #  lai roi xuong tunnel -> localhost:8090 -> Apache.
+#
+#  ⚠️ /office CO Y KHONG nam trong danh sach — no do well-known phuc vu
+#     (well-known\function\mas\office.php). Them route /office se lam worker
+#     "che" mat ban cua well-known.
 #
 #  ⚠️ Danh sach $wanted nay PHAI DONG BO voi:
 #       - $wanted trong %LOCALAPPDATA%\PhpStack\fix-mas-route.ps1
@@ -119,7 +123,6 @@ if (-not $zoneId) { throw "Khong tim thay zone $ZoneName" }
 
 $wanted = @(
     "$ZoneName/get",
-    "$ZoneName/office",
     "$ZoneName/aio",
     "$ZoneName/zip",
     "$ZoneName/MAS_AIO.cmd",

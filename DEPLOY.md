@@ -16,7 +16,7 @@
 | **Gắn domain htchuai.dpdns.org** | ✅ **XONG** — HTTP 200, hết lỗi 530 |
 | **Push lên GitHub** | ✅ **XONG** — `lehuy01092009-bit/Microsoft-Activation-Scripts` |
 | **Test end-to-end** | ✅ **XONG** — cả 5 route đều đúng |
-| **Thêm `/office`** (kích hoạt Office, tiếng Việt có dấu) | ✅ code xong — ⏳ **cần deploy worker** (`deploy-worker.bat`) |
+| **Thêm `/office`** (kích hoạt Office, tiếng Việt có dấu) | ✅ **XONG** — well-known phục vụ, KHÔNG cần deploy worker |
 
 ## Lệnh đã chạy được
 
@@ -140,22 +140,41 @@ và **không** có dòng "Your version of MAS is outdated".
 
 | Route | Trả về |
 |---|---|
-| `/get` | Loader kích hoạt **Windows** (`get.ps1`) |
-| `/office` | Loader kích hoạt **Office** (`office.ps1`) — **dùng chung key với `/get`** |
-| `/aio` hoặc `/MAS_AIO.cmd` | `MAS_AIO.cmd` trực tiếp |
-| `/zip` | Redirect 302 → ZIP của repo |
-| `/pkg` | Proxy ZIP (không lộ link gốc trong lúc tải) |
+| `/get` | Loader kích hoạt **Windows** (`get.ps1`) — Worker `mas-htchuai` |
+| `/office` | Loader kích hoạt **Office** (`office.ps1`) — **well-known phục vụ**, KHÔNG qua Worker |
+| `/aio` hoặc `/MAS_AIO.cmd` | `MAS_AIO.cmd` trực tiếp — Worker |
+| `/zip` | Redirect 302 → ZIP của repo — Worker |
+| `/pkg` | Proxy ZIP (không lộ link gốc trong lúc tải) — Worker |
 
 ### `/office` — kích hoạt Office (2026-10-12)
 
 `irm https://htchuai.dpdns.org/office | iex`
 
-- Toàn bộ giao diện **tiếng Việt có dấu** (đã set `[Console]::OutputEncoding = UTF8`).
-- **Dùng chung key với `/get`** — cùng `POST /api/mas/key`, cùng file lưu key
-  `%LOCALAPPDATA%\MAS_htchuai\key.txt`. Khách đã nhập key bên `/get` thì `/office` không hỏi lại.
-- Bỏ trống ở ô `Lệnh` + Enter ⇒ **mặc định `/Ohook`** (kích hoạt Office).
-- Handoff sang cửa sổ Admin dùng file riêng `office-run.txt` (không đụng `run.txt` của `/get`).
-- Thư mục tạm riêng: `%SystemRoot%\Temp\MAS_htchuai_office`.
+**Chạy trên well-known, KHÔNG qua Worker mas-htchuai.**
+
+| Thành phần | Ở đâu |
+|---|---|
+| Endpoint | `well-known\function\mas\office.php` |
+| Route | `.htaccess`: `RewriteRule ^office$ /function/mas/office.php [L]` |
+| Script trả về | `office.ps1` — tải từ raw.githubusercontent → jsDelivr → cache `.cache-office.ps1` |
+
+Vì sao đặt ở well-known: sửa `office.ps1` + push GitHub là **có ngay**, không cần deploy worker,
+không cần API token Cloudflare. Ngoài ra dùng lại được trang 404 thật, bảng IP
+`ws_mas_ip_allow` và trang admin của site.
+
+⚠️ **`/office` CỐ Ý KHÔNG có route ở Cloudflare.** Nếu thêm route `/office` cho worker,
+worker sẽ "che" mất bản của well-known. Nhánh `case '/office'` trong `worker.js` chỉ để dự phòng.
+
+Hành vi (giống hệt `/get`):
+- Client thật (PowerShell `irm`, curl — `Accept` không có `text/html`) → trả script `text/plain`
+- Trình duyệt + IP trong `ws_mas_ip_allow` → trang HTML xem code + anti DevTools
+- Trình duyệt + IP khác → **404 thật** của site (`client/layout/pages/global/error/404.php`)
+
+Đặc điểm script:
+- Toàn bộ giao diện **tiếng Việt có dấu** (`[Console]::OutputEncoding = UTF8`)
+- **Dùng chung key với `/get`** — cùng `POST /api/mas/key`, cùng `%LOCALAPPDATA%\MAS_htchuai\key.txt`
+- Bỏ trống ô `Lệnh` + Enter ⇒ **mặc định `/Ohook`**
+- Handoff sang cửa sổ Admin dùng `office-run.txt` (không đụng `run.txt` của `/get`)
 
 | Lệnh | Việc |
 |---|---|
@@ -164,9 +183,6 @@ và **không** có dòng "Your version of MAS is outdated".
 | `/HWID` | kích hoạt Windows |
 | `/Z-` | kích hoạt Windows / ESU (TSforge) |
 | *(bỏ trống)* | mặc định `/Ohook` |
-
-Cả `/get` và `/office` chia sẻ cùng một nhánh code trong `worker.js` (`case '/get': case '/office':`),
-chỉ khác file script và nội dung trang HTML xem code (`PAGE_GET` / `PAGE_OFFICE`).
 
 ### `/get` — phân biệt theo client và theo IP (2026-10-04)
 
@@ -212,11 +228,14 @@ Hoặc double-click **`deploy-worker.bat`** (dùng `wrangler login` + `wrangler 
 Route `/*` **nuốt cả domain**: worker sẽ trả lời mọi path và website well-known
 (`dash.php`, `/tx/`, `/tx/admin/`, `/edit/`, `/admin/dashboard`…) **chết ngay**.
 
-Worker chỉ giữ **6 route**, mọi path khác rơi xuống tunnel → `localhost:8090` → Apache:
+Worker chỉ giữ **5 route**, mọi path khác rơi xuống tunnel → `localhost:8090` → Apache:
 
 ```
-/get  /office  /aio  /zip  /MAS_AIO.cmd  /pkg
+/get  /aio  /zip  /MAS_AIO.cmd  /pkg
 ```
+
+`/office` **không** nằm trong danh sách này — nó do well-known phục vụ
+(`RewriteRule ^office$ /function/mas/office.php`).
 
 ⚠️ Danh sách này phải **đồng bộ ở 3 chỗ** — lệch một chỗ là hỏng:
 

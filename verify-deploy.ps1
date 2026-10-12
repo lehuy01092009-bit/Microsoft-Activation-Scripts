@@ -1,9 +1,9 @@
 # ============================================================================
-#  verify-deploy.ps1 — kiem tra worker MAS sau khi deploy
+#  verify-deploy.ps1 — kiem tra sau khi deploy
 #
 #  Kiem tra 3 thu:
-#    1. /get     -> phai tra script (HTTP 200)
-#    2. /office  -> phai tra script (HTTP 200)
+#    1. /get     -> phai tra script (HTTP 200)          [Worker mas-htchuai]
+#    2. /office  -> phai tra script (HTTP 200)          [well-known, KHONG phai worker]
 #    3. /dash.php -> website well-known phai CON SONG
 #       (neu chet => route da bi dat thanh htchuai.dpdns.org/* -> phai sua ngay)
 #

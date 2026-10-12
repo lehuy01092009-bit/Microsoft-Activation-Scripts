@@ -13,8 +13,12 @@ account_id = "6783d1be06b99f51d37827642c3615b6"
 #  website well-known (dash.php, /tx/, /tx/admin/, /edit/, /admin/dashboard...)
 #  CHẾT NGAY. (Lỗi này đã từng xảy ra, phải chạy fix-mas-route.ps1 để cứu.)
 #
-#  Chỉ 6 path dưới đây thuộc worker. Mọi path khác rơi xuống tunnel
+#  Chỉ 5 path dưới đây thuộc worker. Mọi path khác rơi xuống tunnel
 #  (cloudflared -> localhost:8090 -> Apache -> well-known).
+#
+#  ⚠️ `/office` CỐ Ý KHÔNG có route ở đây — nó do well-known phục vụ
+#     (`function/mas/office.php`). Nếu thêm route /office thì worker sẽ
+#     "che" mất bản của well-known. Xem DEPLOY.md.
 #
 #  ⚠️ Danh sách này PHẢI ĐỒNG BỘ với $wanted trong
 #     %LOCALAPPDATA%\PhpStack\fix-mas-route.ps1
@@ -22,7 +26,6 @@ account_id = "6783d1be06b99f51d37827642c3615b6"
 # ============================================================================
 routes = [
   { pattern = "htchuai.dpdns.org/get",         zone_name = "htchuai.dpdns.org" },
-  { pattern = "htchuai.dpdns.org/office",      zone_name = "htchuai.dpdns.org" },
   { pattern = "htchuai.dpdns.org/aio",         zone_name = "htchuai.dpdns.org" },
   { pattern = "htchuai.dpdns.org/zip",         zone_name = "htchuai.dpdns.org" },
   { pattern = "htchuai.dpdns.org/MAS_AIO.cmd", zone_name = "htchuai.dpdns.org" },
